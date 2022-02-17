@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	_ "github.com/go-sql-driver/mysql"
-	"log"
 	"net/http"
 	"puppy/database"
+
+	"github.com/go-chi/chi/v5"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var dbConnect *sql.DB
+var databaseConnection *sql.DB
 
 type Product struct {
 	ID           int    `json:"id"`
@@ -19,36 +19,39 @@ type Product struct {
 	Description  string `json:"description"`
 }
 
+func catch(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
+	fmt.Println("iniciando servidor go")
 	// Conexion a la BD
-	dbConnect := database.InitDB()
-	defer dbConnect.Close()
+	databaseConnection := database.InitDB()
+	defer databaseConnection.Close()
 
 	// Server Chi
 	r := chi.NewRouter()
 
 	// Endpoint de Productos
 	r.Get("/products", AllProducts)
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":4000", r)
 
 }
 
 func AllProducts(w http.ResponseWriter, r *http.Request) {
-	const sql = `SELECT id, product_code, COALESCE(description, '') FROM Products`
-	results, err := dbConnect.Query(sql)
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	const sql = `SELECT * FROM products`
+	results, err := databaseConnection.Query(sql)
+	catch(err)
+	defer results.Close()
 	var products []*Product
 
 	for results.Next() {
 		product := &Product{}
 		err = results.Scan(&product.ID, &product.Product_Code, &product.Description)
 
-		if err != nil {
-			log.Fatal(err)
-		}
+		catch(err)
 		products = append(products, product)
 	}
 	respondwithJSON(w, http.StatusOK, products)
