@@ -41,8 +41,8 @@ func main() {
 }
 
 func AllProducts(w http.ResponseWriter, r *http.Request) {
-	const sql = `SELECT * FROM products`
-	results, err := databaseConnection.Query(sql)
+	const query = "SELECT * FROM products"
+	results, err := databaseConnection.Query(query)
 	catch(err)
 	defer results.Close()
 	var products []*Product
